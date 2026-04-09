@@ -26,6 +26,9 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation platform('org.testcontainers:testcontainers-bom:2.0.4') //import bom
+	testImplementation "org.testcontainers:testcontainers-mongodb:2.0.4"//no version specified
+	testImplementation "org.testcontainers:testcontainers-junit-jupiter:2.0.4"
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb-test'
