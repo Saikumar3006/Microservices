@@ -1,6 +1,8 @@
 package com.shop.productservice;
 
 import com.shop.productservice.dto.ProductRequest;
+import com.shop.productservice.repository.ProductRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MediaType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +36,12 @@ class ProductServiceApplicationTests {
 	private MockMvc mockMvc;
 	@Autowired
 	private ObjectMapper objectMapper;
+	@Autowired
+	private ProductRepository productRepository;
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry dynamicPropertyRegistrary) {
-		dynamicPropertyRegistrary.add("spring.data.mongodb.uri",mongoDBContainer::getReplicaSetUrl);
+		dynamicPropertyRegistrary.add("spring.mongodb.uri",mongoDBContainer::getReplicaSetUrl);
 	}
 
 	@Test
@@ -48,6 +52,12 @@ class ProductServiceApplicationTests {
 				.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 				.content(json))
 				.andExpect(status().isCreated());
+        Assertions.assertTrue(!productRepository.findAll().isEmpty());
+
+	}
+
+	@Test
+	void getAllProducts() throws Exception {
 
 	}
 

@@ -1,0 +1,56 @@
+# Infrastructure for the microservices project.
+# Run from this directory:  docker compose up -d
+
+services:
+
+  mongodb:
+    # The image to run. Always pin a version - "mongo:latest" means your
+    # teammate (and your CI, and future-you) can silently get a different
+    # database than the one you tested against.
+    image: mongo:8.0
+
+    # Fixed container name so you can type `docker logs mongodb` instead of
+    # looking up a generated name like "microservices-mongodb-1".
+    container_name: mongodb
+
+    # Restart the container if it crashes, or when Docker Desktop starts.
+    # "unless-stopped" = come back automatically, but respect it if I
+    # deliberately ran `docker stop`.
+    restart: unless-stopped
+
+    ports:
+      # "HOST:CONTAINER"  -  left side is the port on your Mac,
+      #                      right side is the port inside the container.
+      # Mongo always listens on 27017 inside. Publishing it to 27017 on the
+      # host means your Spring app and Compass connect exactly as before.
+      - "27017:27017"
+
+    environment:
+      # These two are read ONLY on first startup, when the data directory is
+      # empty. They create an admin user. Change them and restart and nothing
+      # happens - you would have to delete the volume first.
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+    volumes:
+      # Named volume -> Docker manages the storage, it survives
+      # `docker compose down`, and it is what stops your data disappearing
+      # every time the container is recreated.
+      # /data/db is where mongod writes its files inside the container.
+      - mongo-data:/data/db
+
+    healthcheck:
+      # Docker runs this inside the container to decide if Mongo is really
+      # ready. "Container started" is not the same as "database accepting
+      # connections" - this is the difference. Later, app containers can wait
+      # on this with:  depends_on: { mongodb: { condition: service_healthy } }
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# Declaring the named volume used above. Without this block, Docker Compose
+# rejects the file.
+volumes:
+  mongo-data:

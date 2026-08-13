@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+
+# Gradle / build output (per-service .gitignore files also cover these)
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Exported test reports
+Test Results*.html
