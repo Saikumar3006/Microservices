@@ -20,6 +20,17 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// Flyway owns the schema. THREE artifacts are needed here:
+	//  - spring-boot-flyway: the Boot autoconfiguration. Boot 4 split
+	//    autoconfig out of spring-boot-autoconfigure into per-technology
+	//    modules, so without this Flyway is on the classpath but never runs
+	//    (no log output, no tables, and JPA then fails schema validation).
+	//  - flyway-core: Flyway itself.
+	//  - flyway-mysql: since Flyway 9 the MySQL support is a separate
+	//    artifact; without it startup fails with "Unsupported Database: MySQL".
+	implementation 'org.springframework.boot:spring-boot-flyway'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-mysql'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'

@@ -50,7 +50,51 @@ services:
       retries: 5
       start_period: 20s
 
-# Declaring the named volume used above. Without this block, Docker Compose
+  # Owned by order-service. Different service, different database engine -
+  # each service picks the store that fits its data (polyglot persistence).
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    restart: unless-stopped
+
+    ports:
+      # NOTE the mismatch: 3307 on the host, 3306 inside the container.
+      # A native Homebrew MySQL already holds 3306 on this Mac (it has the
+      # mifosplatform-tenants database on it), and two things cannot share a
+      # host port. MySQL still listens on its normal 3306 INSIDE the container
+      # - only the host side moved. So order-service connects to localhost:3307.
+      - "3307:3306"
+
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      # THIS is the line that fixes "Unknown database 'order-service'".
+      # On first startup the image runs CREATE DATABASE for this name, so the
+      # schema exists before Spring ever connects. Same first-run-only rule as
+      # Mongo: ignored if the volume already contains data.
+      MYSQL_DATABASE: order-service
+
+    volumes:
+      # MySQL stores data in /var/lib/mysql, not /data/db like Mongo.
+      # Every image has its own data directory - check the image's docs.
+      - mysql-data:/var/lib/mysql
+      # Bind mount (not a named volume): *.sql / *.sh here are executed once,
+      # on first startup only, in filename order. Kept in the order-service
+      # folder so the SQL lives beside the service that owns it - bind mount
+      # paths are relative to this compose file, so that works fine.
+      - ./order-service/src/main/resources/db/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      # "mysqladmin ping" succeeds once the server accepts connections.
+      # MySQL takes noticeably longer than Mongo to initialise on first run
+      # (it builds the system tables), hence the longer start_period.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pmysql"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+# Declaring the named volumes used above. Without this block, Docker Compose
 # rejects the file.
 volumes:
   mongo-data:
+  mysql-data:

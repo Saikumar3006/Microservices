@@ -7,7 +7,6 @@ import com.shop.orderservice.model.OrderLineItems;
 import com.shop.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,18 +20,25 @@ public class OrderService {
     public void placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
-        List<OrderLineItems> orderLineItemsList=orderRequest.getOrderLineItemsList().stream()
-                .map(this::mapToDTO)
+        List<OrderLineItems> orderLineItemsList = orderRequest.getOrderLineItemsList().stream()
+                .map(dto -> mapToEntity(dto, order))
                 .toList();
         order.setOrderLineItemsList(orderLineItemsList);
         orderRepository.save(order);
     }
 
-    private OrderLineItems mapToDTO(OrderLineItems orderLineItemsDto) {
+    // Renamed from mapToDTO: it maps a DTO -> an entity, which is the opposite
+    // direction. The old version assigned backwards - it read the empty new
+    // entity and wrote those nulls into the incoming object, then returned the
+    // still-empty entity. Every line item would have saved as (null, null, null).
+    private OrderLineItems mapToEntity(OrderLineItemsDto dto, Order order) {
         OrderLineItems orderLineItems = new OrderLineItems();
-        orderLineItemsDto.setPrice(orderLineItems.getPrice());
-        orderLineItemsDto.setQuantity(orderLineItems.getQuantity());
-        orderLineItemsDto.setSkuCode(orderLineItems.getSkuCode());
+        orderLineItems.setSkuCode(dto.getSkuCode());
+        orderLineItems.setPrice(dto.getPrice());
+        orderLineItems.setQuantity(dto.getQuantity());
+        // Required now that OrderLineItems owns the relationship. Without this
+        // line order_id saves as NULL - no error, just a broken row.
+        orderLineItems.setOrder(order);
         return orderLineItems;
     }
 }
