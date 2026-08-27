@@ -78,10 +78,12 @@ services:
       # Every image has its own data directory - check the image's docs.
       - mysql-data:/var/lib/mysql
       # Bind mount (not a named volume): *.sql / *.sh here are executed once,
-      # on first startup only, in filename order. Kept in the order-service
-      # folder so the SQL lives beside the service that owns it - bind mount
-      # paths are relative to this compose file, so that works fine.
-      - ./order-service/src/main/resources/db/init:/docker-entrypoint-initdb.d:ro
+      # on first startup only, in filename order - hence the 01-, 02- prefixes.
+      # This MySQL server is shared infrastructure hosting a database per
+      # service, so the bootstrap SQL lives in one shared directory rather than
+      # inside any single service. Only ONE directory can mount here, which is
+      # why it cannot stay under order-service/.
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
 
     healthcheck:
       # "mysqladmin ping" succeeds once the server accepts connections.
